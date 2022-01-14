@@ -1,7 +1,15 @@
+html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
-  margin: auto;
-  max-width: 38rem;
-  padding: 2rem;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  background: #263238;
+}
+
+.ReactCodeMirror,
+.CodeMirror {
+  position: absolute;
+  height: 100vh;
+  inset: 0;
 }
