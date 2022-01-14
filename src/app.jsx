@@ -2,19 +2,26 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import CodeMirror from 'react-codemirror';
 
-const ScratchPad = () => {
+const ScratchPad = ({text}) => {
     const options = {
         theme: "material"
     }
     const updateScratchpad = newValue => {
-        console.log(newValue)
+        window.scratchpad.saveContent(newValue);
     }
 
     return <CodeMirror 
-        value="Hello from codemirror in react in Electron"
+        value={text}
         onChange={updateScratchpad}
         options={options}
     />
 }
 
-ReactDOM.render(<ScratchPad />, document.body);
+const updateScratchpad = newValue => {
+    window.scratchpad.saveContent(newValue);
+};
+
+(async () => {
+    const content = await window.scratchpad.content;
+    ReactDOM.render(<ScratchPad text={content} />, document.body);
+})();

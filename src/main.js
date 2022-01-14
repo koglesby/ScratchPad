@@ -1,5 +1,6 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -7,12 +8,33 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+const filename = `${app.getPath('userData')}/content.txt`;
+
+const loadContent = async () => {
+  return fs.existsSync(filename) ? fs.readFileSync(filename, 'utf8') : '';
+};
+
+const saveContent = async (content) => {
+  fs.writeFileSync(filename, content, 'utf8');
+};
+
+ipcMain.on('saveContent', (e, content) => {
+  saveContent(content);
+});
+
+ipcMain.handle('loadContent', (e) => {
+  return loadContent();
+});
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     backgroundColor: '#263238',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
 
   // and load the index.html of the app.
