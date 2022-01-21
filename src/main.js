@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -8,10 +8,10 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-const filename = `${app.getPath('userData')}/content.txt`;
+let filename = `${app.getPath('userData')}/content.txt`;
 
-const loadContent = async () => {
-  return fs.existsSync(filename) ? fs.readFileSync(filename, 'utf8') : '';
+const loadContent = async (loadFile) => {
+  return fs.existsSync(loadFile) ? fs.readFileSync(loadFile, 'utf8') : '';
 };
 
 const saveContent = async (content) => {
@@ -23,10 +23,138 @@ ipcMain.on('saveContent', (e, content) => {
 });
 
 ipcMain.handle('loadContent', (e) => {
-  return loadContent();
+  return loadContent(filename);
 });
 
 const createWindow = () => {
+  const getFileFromUser = () => {
+    dialog
+      .showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [
+          { name: 'Text Files', extensions: ['txt'] },
+          { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+        ],
+      })
+      .then((result) => {
+        console.log(result.canceled);
+        console.log(result.filePaths[0]);
+
+        filename = result.filePaths[0];
+        createWindow();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const isMac = process.platform === 'darwin';
+
+  const template = [
+    // { role: 'appMenu' }
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' },
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' },
+            ],
+          },
+        ]
+      : []),
+    // { role: 'fileMenu' }
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' },
+        {
+          label: 'Open File',
+          accelerator: 'CommandOrControl+O',
+          click(item, focusedWindow) {
+            getFileFromUser(focusedWindow);
+          },
+        },
+      ],
+    },
+    // { role: 'editMenu' }
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac
+          ? [
+              { role: 'pasteAndMatchStyle' },
+              { role: 'delete' },
+              { role: 'selectAll' },
+              { type: 'separator' },
+              {
+                label: 'Speech',
+                submenu: [{ role: 'startSpeaking' }, { role: 'stopSpeaking' }],
+              },
+            ]
+          : [{ role: 'delete' }, { type: 'separator' }, { role: 'selectAll' }]),
+      ],
+    },
+    // { role: 'viewMenu' }
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
+    // { role: 'windowMenu' }
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac
+          ? [
+              { type: 'separator' },
+              { role: 'front' },
+              { type: 'separator' },
+              { role: 'window' },
+            ]
+          : [{ role: 'close' }]),
+      ],
+    },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'Learn More',
+          click: async () => {
+            const { shell } = require('electron');
+            await shell.openExternal('https://electronjs.org');
+          },
+        },
+      ],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
