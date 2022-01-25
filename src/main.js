@@ -37,11 +37,26 @@ const createWindow = () => {
         ],
       })
       .then((result) => {
-        console.log(result.canceled);
-        console.log(result.filePaths[0]);
-
         filename = result.filePaths[0];
         createWindow();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const saveFileFromUser = () => {
+    dialog
+      .showSaveDialog(mainWindow, {
+        filters: [
+          { name: 'Text Files', extensions: ['txt'] },
+          { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+        ],
+      })
+      .then((result) => {
+        const newContent = fs.readFileSync(filename, 'utf8');
+        filename = result.filePath;
+        saveContent(newContent);
       })
       .catch((err) => {
         console.log(err);
@@ -80,6 +95,13 @@ const createWindow = () => {
           accelerator: 'CommandOrControl+O',
           click(item, focusedWindow) {
             getFileFromUser(focusedWindow);
+          },
+        },
+        {
+          label: 'Save As',
+          accelerator: 'CommandOrControl+S',
+          click(item, focusedWindow) {
+            saveFileFromUser(focusedWindow);
           },
         },
       ],
