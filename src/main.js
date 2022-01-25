@@ -8,7 +8,11 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-let filename = `${app.getPath('userData')}/content.txt`;
+let filename =
+  (process.argv[1] && process.argv[1].split('.').pop() === 'txt') ||
+  (process.argv[1] && process.argv[1].split('.').pop() === 'md')
+    ? process.argv[1]
+    : `${app.getPath('userData')}/content.txt`;
 
 const loadContent = async (loadFile) => {
   return fs.existsSync(loadFile) ? fs.readFileSync(loadFile, 'utf8') : '';
@@ -57,6 +61,7 @@ const createWindow = () => {
         const newContent = fs.readFileSync(filename, 'utf8');
         filename = result.filePath;
         saveContent(newContent);
+        app.addRecentDocument(filename);
       })
       .catch((err) => {
         console.log(err);
@@ -64,6 +69,7 @@ const createWindow = () => {
   };
 
   const isMac = process.platform === 'darwin';
+  console.log(process.argv[1]);
 
   const template = [
     // { role: 'appMenu' }
@@ -103,6 +109,16 @@ const createWindow = () => {
           click(item, focusedWindow) {
             saveFileFromUser(focusedWindow);
           },
+        },
+        {
+          label: 'Open Recent',
+          role: 'recentdocuments',
+          submenu: [
+            {
+              label: 'Clear Recent',
+              role: 'clearrecentdocuments',
+            },
+          ],
         },
       ],
     },
