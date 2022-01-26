@@ -199,6 +199,7 @@ const createWindow = () => {
     height: 600,
     backgroundColor: '#263238',
     show: false,
+    title: `Scratchpad - ${filename}`,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
