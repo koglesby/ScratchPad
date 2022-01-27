@@ -14,12 +14,16 @@ let filename =
     ? process.argv[1]
     : `${app.getPath('userData')}/content.txt`;
 
+let fileNames = {};
+
 const loadContent = async (loadFile) => {
   return fs.existsSync(loadFile) ? fs.readFileSync(loadFile, 'utf8') : '';
 };
 
 const saveContent = async (content) => {
-  fs.writeFileSync(filename, content, 'utf8');
+  const focusedId = BrowserWindow.getFocusedWindow().id;
+
+  fs.writeFileSync(fileNames[focusedId], content, 'utf8');
 };
 
 ipcMain.on('saveContent', (e, content) => {
@@ -41,8 +45,10 @@ const createWindow = () => {
         ],
       })
       .then((result) => {
-        filename = result.filePaths[0];
-        createWindow();
+        if (result.filePaths[0]) {
+          filename = result.filePaths[0];
+          createWindow();
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -59,9 +65,11 @@ const createWindow = () => {
       })
       .then((result) => {
         const newContent = fs.readFileSync(filename, 'utf8');
-        filename = result.filePath;
-        saveContent(newContent);
-        app.addRecentDocument(filename);
+        if (result.filePath) {
+          filename = result.filePath;
+          saveContent(newContent);
+        }
+        // app.addRecentDocument(filename);
       })
       .catch((err) => {
         console.log(err);
@@ -69,7 +77,6 @@ const createWindow = () => {
   };
 
   const isMac = process.platform === 'darwin';
-  console.log(process.argv[1]);
 
   const template = [
     // { role: 'appMenu' }
@@ -206,6 +213,9 @@ const createWindow = () => {
   });
 
   mainWindow.once('ready-to-show', () => {
+    winId = mainWindow.id;
+    fileNames[winId] = filename;
+    console.log('fileNames : ', fileNames);
     mainWindow.show();
     mainWindow.focus();
   });
